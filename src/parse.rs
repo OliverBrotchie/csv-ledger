@@ -78,9 +78,9 @@ pub fn parse_header(input: &str) -> IResult<&str, ()> {
     let (input, _) = ws(tag("amount"))(input)?;
 
     if !input.is_empty() {
-        return Err(NomErr::Failure(nom::error::Error {
+        return Err(NomErr::Failure(SubErr {
             input,
-            code: ErrorKind::NonEmpty,
+            code: ErrorKind::Fail,
         }));
     }
 
@@ -116,7 +116,7 @@ pub fn parse_transaction(input: &str) -> IResult<&str, Transaction> {
             tag("withdrawal"),
             tag("dispute"),
             tag("resolve"),
-            tag("chageback"),
+            tag("chargeback"),
         ))),
         tag(","),
     )(input)?;
@@ -129,17 +129,17 @@ pub fn parse_transaction(input: &str) -> IResult<&str, Transaction> {
     let (input, amount) = opt(ws(double))(input)?;
 
     if !input.is_empty() {
-        return Err(NomErr::Failure(nom::error::Error {
+        return Err(NomErr::Failure(SubErr {
             input,
-            code: ErrorKind::NonEmpty,
+            code: ErrorKind::Fail,
         }));
     }
 
     // Amounts must be positive
     if let Some(value) = amount && value.is_sign_negative() {
-        return Err(NomErr::Failure(nom::error::Error {
+        return Err(NomErr::Failure(SubErr {
             input: "Amount was negative.",
-            code: ErrorKind::Float,
+            code: ErrorKind::Fail,
         }));
     }
 
@@ -188,6 +188,11 @@ mod parse_header {
     fn err_missing_value() {
         parse_header("type,client,tx,").unwrap_err();
     }
+
+    #[test]
+    fn err_extra_value() {
+        parse_header("type,client,tx,amount,foo").unwrap_err();
+    }
 }
 
 #[cfg(test)]
@@ -195,23 +200,51 @@ mod parse_transaction {
     use crate::parse::{parse_transaction, Transaction};
 
     #[test]
+    fn deposit() {
+        let (_, res) = parse_transaction("deposit, 1, 2, 3.0").unwrap();
+        assert_eq!(res, Transaction::Deposit(1, 2, 3.0));
+    }
+
+    #[test]
+    fn withdrawal() {
+        let (_, res) = parse_transaction("withdrawal, 1, 2, 3.0").unwrap();
+        assert_eq!(res, Transaction::Withdrawal(1, 2, 3.0));
+    }
+
+    #[test]
+    fn dispute() {
+        let (_, res) = parse_transaction("dispute, 1, 2,").unwrap();
+        assert_eq!(res, Transaction::Dispute(1, 2));
+    }
+
+    #[test]
+    fn resolve() {
+        let (_, res) = parse_transaction("resolve, 1, 2,").unwrap();
+        assert_eq!(res, Transaction::Resolve(1, 2));
+    }
+
+    #[test]
+    fn chargeback() {
+        let (_, res) = parse_transaction("chargeback, 1, 2,").unwrap();
+        assert_eq!(res, Transaction::Chargeback(1, 2));
+    }
+
+    #[test]
     fn ok_no_white_space() {
-        let (_, res) = parse_transaction("deposit,1,2,3.0").expect("Error whilst parsing header.");
+        let (_, res) = parse_transaction("deposit,1,2,3.0").unwrap();
 
         assert_eq!(res, Transaction::Deposit(1, 2, 3.0));
     }
 
     #[test]
     fn ok_with_white_space() {
-        let (_, res) = parse_transaction("   deposit   ,1  ,   2,  3.0  ")
-            .expect("Error whilst parsing Transaction.");
+        let (_, res) = parse_transaction("   deposit   ,1  ,   2,  3.0  ").unwrap();
         assert_eq!(res, Transaction::Deposit(1, 2, 3.0));
     }
 
     #[test]
     fn ok_no_amount() {
-        let (_, res) =
-            parse_transaction("dispute,1,2,").expect("Error whilst parsing Transaction.");
+        let (_, res) = parse_transaction("dispute,1,2,").unwrap();
         assert_eq!(res, Transaction::Dispute(1, 2));
     }
 
@@ -226,7 +259,22 @@ mod parse_transaction {
     }
 
     #[test]
-    fn err_invalid_dispute() {
+    fn err_dispute_missing_value() {
         parse_transaction("dispute,1,").unwrap_err();
+    }
+
+    #[test]
+    fn err_dispute_extra_value() {
+        parse_transaction("dispute,1,2,3.0").unwrap_err();
+    }
+
+    #[test]
+    fn err_extra_value() {
+        parse_transaction("withdrawal,1,2,3.0,foo").unwrap_err();
+    }
+
+    #[test]
+    fn err_negative_amount() {
+        parse_transaction("withdrawal,1,2,-3.0").unwrap_err();
     }
 }

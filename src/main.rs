@@ -1,5 +1,5 @@
 //! # `csv-ledger`
-//!  Consumes a CSV containing a list of transactions and produces a set of bank account statements.
+//!  Consumes a CSV containing a list of transactions and produces a set of client account statements.
 //!
 //! ## Installation
 //!
@@ -19,25 +19,62 @@
 //! csv-ledger --output out.csv foo.csv
 //! ```
 //!
-//! To see a full list of options run:
+//! **To see help infomation:**
 //! ```sh
 //! csv-ledger --help
 //! ```
 
-pub mod bank;
+pub mod ledger;
 pub mod parse;
 
-use bank::{Bank, BankErr};
 use clap::Parser;
+use core::fmt;
+use ledger::Ledger;
 use nom::Err as NomErr;
 use std::{
+    fmt::Display,
     fs::{self, File},
-    io::BufReader,
+    io::{self, BufReader},
     path::PathBuf,
+    process::ExitCode,
 };
 
+#[derive(Debug)]
+pub enum LedgerErr {
+    Opening(io::Error),
+    Reading(io::Error),
+    Saving(io::Error),
+    Parse(String),
+}
+
+impl Display for LedgerErr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let (msg, e) = match self {
+            LedgerErr::Opening(e) => ("opening the csv", e.to_string()),
+            LedgerErr::Reading(e) => ("reading in the csv", e.to_string()),
+            LedgerErr::Saving(e) => ("saving the output file", e.to_string()),
+            LedgerErr::Parse(e) => ("parsing csv", e.clone()),
+        };
+
+        write!(f, "Ledger Error 🦀 - Issue whilst {msg}: {e}",)
+    }
+}
+
+impl<E> From<NomErr<E>> for LedgerErr
+where
+    E: Display,
+{
+    fn from(err: NomErr<E>) -> Self {
+        LedgerErr::Parse(match err {
+            NomErr::Incomplete(_) => "Input was incomplete.".to_string(),
+            NomErr::Error(e) => format!("Input was in the wrong format. Error: {e}"),
+            NomErr::Failure(_) => "Faliure whilst parsing input.".to_string(),
+        })
+    }
+}
+
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[clap(author, version, about)]
 struct Args {
     /// The path to the input CSV File.
     path: PathBuf,
@@ -47,21 +84,30 @@ struct Args {
     output: Option<PathBuf>,
 }
 
-fn main() -> Result<(), BankErr> {
+fn main() -> ExitCode {
     let args = Args::parse();
 
-    // Open the csv file
-    let file = File::open(args.path)?;
+    if let Err(err) = perform_parse_and_output(args.path, args.output) {
+        println!("{err}");
+        return ExitCode::from(1);
+    }
 
-    // Create a new bank and consume the csv file
-    let mut bank = Bank::default();
-    bank.consume_csv(BufReader::new(file))?;
+    ExitCode::from(0)
+}
+
+fn perform_parse_and_output(path: PathBuf, output: Option<PathBuf>) -> Result<(), LedgerErr> {
+    // Open the csv file
+    let file = File::open(path).map_err(LedgerErr::Opening)?;
+
+    // Create a new ledger and consume the csv file
+    let mut ledger = Ledger::default();
+    ledger.consume_csv(BufReader::new(file))?;
 
     // Output the result
-    if let Some(output_path) = args.output {
-        fs::write(output_path, format!("{}", bank))?;
+    if let Some(output_path) = output {
+        fs::write(output_path, format!("{ledger}")).map_err(LedgerErr::Saving)?;
     } else {
-        println!("{}", bank);
+        println!("{}", ledger);
     }
 
     Ok(())

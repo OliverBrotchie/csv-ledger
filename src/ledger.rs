@@ -1,72 +1,47 @@
-//! # Bank
-//!  This module contains `Bank`, the state store used for this CLI. 
-//! 
-//! `Bank` stores running totals of bank accounts, consumes csv files and 
+//! # Ledger
+//!  This module contains `Ledger`, the state store used for this CLI.
+//!
+//! `Ledger` stores running totals of client accounts, consumes csv files and
 //! outputs associated to account statements to string.
 //!
 //! **Basic example:**
 //! ```rust
-//! use crate::bank::bank
+//! use crate::ledger::ledger
 //!
 //! fn main() {
 //!     // Read in a new file
 //!     let reader = BufReader::new(File::open("./foo.csv").unwrap());
 //!     
-//!     // Create a new bank and read in the csv file line by line
-//!     let bank = Bank::default();
-//!     bank.consume_csv(reader);
+//!     // Create a new ledger and read in the csv file line by line
+//!     let ledger = Ledger::default();
+//!     ledger.consume_csv(reader);
 //!     
 //!     // Print out the result
-//!     println!("{}"bank);
+//!     println!("{}", ledger);
 //! }
 //! ```
 
 use crate::{
     parse::{parse_header, parse_transaction, Transaction},
-    NomErr,
+    LedgerErr,
 };
 use std::{
     collections::{BTreeMap, HashMap},
     fmt::{self, Display},
-    io::{self, BufRead, BufReader},
+    io::{BufRead, BufReader, Read},
 };
 
-#[derive(Debug)]
-pub enum BankErr {
-    Io(String),
-    Parse(String),
-}
-
-impl From<io::Error> for BankErr {
-    fn from(err: io::Error) -> Self {
-        BankErr::Io(err.to_string())
-    }
-}
-
-impl<E> From<NomErr<E>> for BankErr {
-    fn from(err: NomErr<E>) -> Self {
-        BankErr::Parse(
-            match err {
-                NomErr::Incomplete(_) => "Input was incomplete.",
-                NomErr::Error(_) => "Input was in the wrong format.",
-                NomErr::Failure(_) => "Faliure whilst parsing input.",
-            }
-            .to_string(),
-        )
-    }
-}
-
 #[derive(Default, Debug)]
-pub struct Bank {
-    /// The full list of bank accounts.
+pub struct Ledger {
+    /// The list of client accounts.
     clients: HashMap<u16, ClientData>,
-    /// The full list of transactions. Note: This is a nieve implementation of transaction storage,
+    /// The list of transactions. Note: This is a nieve implementation of transaction storage,
     /// requiring all transactions to be stored in memory. Due to there being no maximum limmit to
     /// how old a transaction can be for a `hold` to be applied, all transactions must be addressable.
     transactions: HashMap<u32, f64>,
 }
 
-/// An individual bank account.
+/// An individual client account.
 #[derive(Debug)]
 pub struct ClientData {
     held: BTreeMap<u32, f64>,
@@ -75,16 +50,16 @@ pub struct ClientData {
     locked: bool,
 }
 
-impl Bank {
+impl Ledger {
     /// Consume a `BufReader` that contains a csv file of transactions.
-    pub fn consume_csv<T>(&mut self, mut reader: BufReader<T>) -> Result<(), BankErr>
+    pub fn consume_csv<T>(&mut self, mut reader: BufReader<T>) -> Result<(), LedgerErr>
     where
-        T: std::io::Read,
+        T: Read,
     {
         validate_header(&mut reader)?;
 
         for line in reader.lines() {
-            match parse_transaction(&line?)?.1 {
+            match parse_transaction(&line.map_err(LedgerErr::Reading)?)?.1 {
                 Transaction::Withdrawal(id, tx, amount) => self.insert_transaction(id, tx, -amount),
                 Transaction::Deposit(id, tx, amount) => self.insert_transaction(id, tx, amount),
                 Transaction::Dispute(id, tx) => self.hold(id, tx),
@@ -100,13 +75,13 @@ impl Bank {
     ///
     /// Example:
     /// ```rust
-    /// const bank = Bank::default();
+    /// const ledger = Ledger::default();
     ///
     /// // Deposit
-    /// bank.insert_transaction(1,1,10);
+    /// ledger.insert_transaction(1,1,10);
     ///
     /// // Withdrawal
-    /// bank.insert_transaction(1,2,-10.0);
+    /// ledger.insert_transaction(1,2,-10.0);
     /// ```
     fn insert_transaction(&mut self, client_id: u16, transaction_id: u32, amount: f64) {
         if let Some(client) = self.clients.get_mut(&client_id) && !client.locked {
@@ -135,7 +110,7 @@ impl Bank {
     fn resolve(&mut self, client_id: u16, transaction_id: u32) {
         // Discard any incorrect inputs
         if let Some(client) = self.clients.get_mut(&client_id) &&
-            let Some(amount) = client.held.remove(&transaction_id) 
+            let Some(amount) = client.held.remove(&transaction_id)
         {
             client.available += amount;
         }
@@ -145,7 +120,7 @@ impl Bank {
     fn chageback(&mut self, client_id: u16, transaction_id: u32) {
         // Discard any incorrect inputs
         if let Some(client) = self.clients.get_mut(&client_id) &&
-            let Some(amount) = client.held.remove(&transaction_id) 
+            let Some(amount) = client.held.remove(&transaction_id)
         {
             client.total -= amount;
             client.locked = true;
@@ -153,17 +128,7 @@ impl Bank {
     }
 }
 
-fn validate_header<T>(reader: &mut BufReader<T>) -> Result<(), BankErr>
-where
-    T: std::io::Read,
-{
-    let mut buf = String::new();
-    reader.read_line(&mut buf)?;
-    parse_header(&buf)?;
-    Ok(())
-}
-
-impl Display for Bank {
+impl Display for Ledger {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
@@ -175,6 +140,16 @@ impl Display for Bank {
                 ))
         )
     }
+}
+
+fn validate_header<T>(reader: &mut BufReader<T>) -> Result<(), LedgerErr>
+where
+    T: Read,
+{
+    let mut buf = String::new();
+    reader.read_line(&mut buf).map_err(LedgerErr::Reading)?;
+    parse_header(&buf)?;
+    Ok(())
 }
 
 impl ClientData {
@@ -200,3 +175,6 @@ impl Display for ClientData {
         )
     }
 }
+
+#[cfg(test)]
+mod validate_header {}
