@@ -1,5 +1,10 @@
 [package]
-name = "transactions-csv"
+name = "csv-ledger"
+authors = ["Oliver Brotchie <o.brotchie@gmail.com>"]
+description = "Consume a CSV containing a list of transactions and produces a set of bank account statements."
+keywords = ["csv", "accounting"]
+repository = "https://github.com/OliverBrotchie/csv-ledger"
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
