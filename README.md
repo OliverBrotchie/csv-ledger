@@ -1,63 +1,74 @@
 <div align="center">
-  <h1><code>csv-ledger</code></h1>
+  <h1><code>csv_ledger</code></h1>
   <strong>
-    A project to learn zero-copy parsing and improve my upon my Rust performance profiling and coverage tooling knowledge.
+    A project to learn zero-copy parsing and improve my Rust performance profiling and coverage tooling knowledge.
   </strong>
 </div>
+<br><br>
 
-*Please note: this crate requires `nightly` toolchain as it makes use of let chains.*
+> *Please note: this crate currently requires `nightly` toolchain as it makes use of let chains and `ilog10`.*
 
-## Installation
+## 🛠 Installation
 
 ```sh
-cargo install csv-ledger
+cargo install csv_ledger
 ```
 
-## Usage
+## 🔋 Usage
 
 **Print output to console:**
 
 ```sh
-csv-ledger foo.csv
+csv_ledger foo.csv
 ```
 
 **Save output to file:**
 ```sh
-csv-ledger --output output.csv foo.csv
+csv_ledger --output output.csv foo.csv
 ```
 
-**To see helpful infomation:**
+**To see helpful information:**
 
 ```sh
-csv-ledger --help
+csv_ledger --help
 ```
 
-## Assumptions
+## 📚 Documentation
+
+Further documentation can be found [here](https://docs.rs/csv_ledger).
+
+## 🔬 Test using `cargo test`
+
+```sh
+cargo test --features test_args
+```
+
+## 📝 Code Coverage
+
+This project aimed to have [a near 100% code-coverage](https://unazoomer.net/csv-ledger/coverage/html). Whilst Rust provides first-class error checking, it cannot easily protect against logic errors. With strong test coverage in combination with Rust's error checking, you can have a high degree of confidence. However, I have found that getting to 100% coverage can be very difficult whilst using `llvm-cov`. LLVM's coverage tooling is far more precise than other coverage tools that I have worked with in the past (such as Jest), requiring all lines, branches, derived traits and implementations to be covered.
+
+A pre-generated coverage report can be found in: [`/coverage/html`](https://unazoomer.net/csv-ledger/coverage/html).
 
 
-## Implementation Details
+### Run Coverage Locally
 
-
-
-## Code Coverage
-
-This project has a 100% code-coverage. Whilst Rust provides first-class error checking, it cannot protect against logic errors. With strong test coverage in combination with Rust's error checking, you can have a high degree of confidence of correctness.
-
-### To run test coverage locally
-
-**Setup:**
+**Setup**
 
 ```sh
 rustup component add llvm-tools-preview &&
 cargo install cargo-llvm-cov
 ```
 
-**Usage:**
+**Usage**
+
+To create a coverage report:
 
 ```sh
-cargo llvm-cov
+cargo llvm-cov --features test_args
 ```
 
-## QA
+To debug a coverage report:
 
-
+```sh
+cargo llvm-cov --features test_args --html --output-dir coverage
+```

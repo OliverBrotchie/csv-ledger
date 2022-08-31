@@ -1,7 +1,7 @@
 [package]
-name = "csv-ledger"
+name = "csv_ledger"
 authors = ["Oliver Brotchie <o.brotchie@gmail.com>"]
-description = "Consume a CSV containing a list of transactions and produces a set of bank account statements."
+description = "Consume a CSV containing a list of transactions and produce a set of bank account statements."
 keywords = ["csv", "accounting"]
 repository = "https://github.com/OliverBrotchie/csv-ledger"
 license = "MIT"
@@ -14,3 +14,9 @@ edition = "2021"
 clap = { version = "3.2.17", features = ["derive"] }
 nom = "7.1.1"
 
+[dev-dependencies]
+tempfile = "3.3.0"
+
+[features]
+default = []
+test_args = []

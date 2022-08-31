@@ -19,6 +19,8 @@ Cargo.lock
 /target
 
 # Unique
-brief.pdf
 data/
+benches/
+brief.pdf
 assumptions.txt
+.DS_Store
