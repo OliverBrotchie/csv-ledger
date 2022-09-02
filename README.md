@@ -6,8 +6,6 @@
 </div>
 <br><br>
 
-> *Please note: this crate currently requires `nightly` toolchain as it makes use of let chains and `ilog10`.*
-
 ## 🛠 Installation
 
 ```sh

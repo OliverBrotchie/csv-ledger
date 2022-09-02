@@ -102,7 +102,7 @@ pub fn four_dp(input: &str) -> IResult<&str, i64> {
         // Convert decimal places to whole numbers
         return Ok((
             input,
-            (pre_dp * 10000 + post_dp * 10_i64.pow(3 - post_dp.checked_ilog10().unwrap_or(0))),
+            (pre_dp * 10000 + post_dp * 10_i64.pow(3 - (post_dp as f32).log10() as u32)),
         ));
     }
 
@@ -152,8 +152,10 @@ pub fn parse_transaction(input: &str) -> Result<Transaction, NomErr<SubErr<&str>
     let amount = delimited(multispace0, four_dp, multispace0)(input).ok();
 
     // Check that the line has been consumed completely
-    if let Some((input,_)) =  amount && !input.is_empty() {
-        Err(nom_err("Input was not empty after parsing transaction."))?;
+    if let Some((input, _)) = amount {
+        if !input.is_empty() {
+            Err(nom_err("Input was not empty after parsing transaction."))?;
+        }
     }
 
     // Convert result into Transaction

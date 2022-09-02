@@ -1,4 +1,3 @@
-#![feature(int_log)]
 //! # `csv_ledger`
 //!  Consume a CSV containing a list of transactions and produce a set of client account statements.
 //!

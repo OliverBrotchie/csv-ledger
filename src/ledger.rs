@@ -107,32 +107,34 @@ impl Ledger {
     /// Opens a dispute on a transaction.
     pub fn hold(&mut self, client_id: u16, transaction_id: u32) {
         // Discard any incorrect inputs
-        if let Some(client) = self.clients.get_mut(&client_id) && 
-            let Some(amount) = self.transactions.remove(&transaction_id)
-        {
-            client.available -= amount;
-            client.held.insert(transaction_id, amount);
+        if let Some(client) = self.clients.get_mut(&client_id) {
+            if let Some(amount) = self.transactions.remove(&transaction_id) {
+                {
+                    client.available -= amount;
+                    client.held.insert(transaction_id, amount);
+                }
+            }
         }
     }
 
     /// Resolves a disputed transaction - adds disputed transaction's value back to the available funds.
     pub fn resolve(&mut self, client_id: u16, transaction_id: u32) {
         // Discard any incorrect inputs
-        if let Some(client) = self.clients.get_mut(&client_id) &&
-            let Some(amount) = client.held.remove(&transaction_id)
-        {
-            client.available += amount;
+        if let Some(client) = self.clients.get_mut(&client_id) {
+            if let Some(amount) = client.held.remove(&transaction_id) {
+                client.available += amount;
+            }
         }
     }
 
     /// Peform a chargeback on a disputed transaction -
     pub fn chageback(&mut self, client_id: u16, transaction_id: u32) {
         // Discard any incorrect inputs
-        if let Some(client) = self.clients.get_mut(&client_id) &&
-            let Some(amount) = client.held.remove(&transaction_id)
-        {
-            client.total -= amount;
-            client.locked = true;
+        if let Some(client) = self.clients.get_mut(&client_id) {
+            if let Some(amount) = client.held.remove(&transaction_id) {
+                client.total -= amount;
+                client.locked = true;
+            }
         }
     }
 }
