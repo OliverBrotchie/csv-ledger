@@ -232,6 +232,12 @@ mod parse_transaction {
     }
 
     #[test]
+    fn ok_no_decimal() {
+        let res = parse_transaction("deposit, 1, 2, 3").unwrap();
+        assert_eq!(res, Transaction::Deposit(1, 2, 30000));
+    }
+
+    #[test]
     fn ok_no_white_space() {
         let res = parse_transaction("deposit,1,2,3.0").unwrap();
 
