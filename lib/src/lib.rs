@@ -1,7 +1,9 @@
 //! # `csv_ledger_lib`
-//!  A sub-library for the `csv_leger` CLI. This library contains two modules:
-//! - `ledger`: Containing the `Ledger` state store.
-//! - `parse`: Containing a zero-coppy csv parser.
+//!  A sub-library for the `csv_leger` CLI.
+//!
+//! This library contains two modules:
+//! - `ledger` - Containing the `Ledger` state store.
+//! - `parse` - Containing a zero-coppy csv parser for transactions.
 
 pub mod ledger;
 pub mod parse;
@@ -11,6 +13,7 @@ use nom::Err as NomErr;
 use std::{fmt::Display, io};
 
 #[derive(Debug)]
+/// An enum representing the possible errors that can occur when parsing a csv file.
 pub enum LedgerErr {
     Opening(io::Error),
     Reading(io::Error),

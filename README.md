@@ -35,10 +35,18 @@ csv_ledger --help
 
 Further documentation can be found [here](https://docs.rs/csv_ledger).
 
-## 🔬 Test using `cargo test`
+## 🔬 Testing
+
+To run tests for the CLI:
 
 ```sh
 cargo test --features test_args
+```
+
+To run tests for the library:
+
+```sh
+cd lib && cargo test
 ```
 
 ## 📝 Code Coverage

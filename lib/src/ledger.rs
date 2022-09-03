@@ -36,6 +36,7 @@ use std::{
     io::{BufRead, BufReader, Read},
 };
 
+// The state store used for the `csv_ledger` CLI.
 #[derive(Default, Debug)]
 pub struct Ledger {
     /// The list of client accounts.
