@@ -33,7 +33,7 @@ csv_ledger --help
 
 ## 📚 Documentation
 
-Further documentation can be found [here](https://docs.rs/csv_ledger).
+Further documentation can be found [here](https://docs.rs/csv_ledger_lib/).
 
 ## 🔬 Testing
 
