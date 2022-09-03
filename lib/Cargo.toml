@@ -1,0 +1,15 @@
+[package]
+name = "csv_ledger_lib"
+authors = ["Oliver Brotchie <o.brotchie@gmail.com>"]
+description = "A sub-library for CSV ledger."
+keywords = ["lib", "csv", "accounting"]
+repository = "https://github.com/OliverBrotchie/csv-ledger"
+license = "MIT"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+
+[dependencies]
+nom = "7.1.1"

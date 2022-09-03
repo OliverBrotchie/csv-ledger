@@ -1,23 +1,28 @@
 //! # Ledger
-//!  This module contains `Ledger`, the state store used for this CLI.
+//!  This module contains `Ledger`, the state store used for the `csv_ledger` CLI.
 //!
 //! `Ledger` stores running totals of client accounts, consumes csv files and
 //! outputs associated to account statements to string.
 //!
 //! **Basic example:**
 //! ```rust
-//! use crate::ledger::ledger
+//! use csv_ledger_lib::ledger::Ledger;
+//! use std::{fs::File, io::BufReader};
+//! # use std::fs;
 //!
 //! fn main() {
+//!     # fs::write("./foo.csv", "type,client,tx,amount\ndeposit,1,1,1.0").unwrap();
 //!     // Read in a new file
 //!     let reader = BufReader::new(File::open("./foo.csv").unwrap());
 //!     
 //!     // Create a new ledger and read in the csv file line by line
-//!     let ledger = Ledger::default();
+//!     let mut ledger = Ledger::default();
 //!     ledger.consume_csv(reader);
 //!     
 //!     // Print out the result
 //!     println!("{}", ledger);
+//!
+//!     # fs::remove_file("./foo.csv").unwrap();
 //! }
 //! ```
 
@@ -51,7 +56,6 @@ pub struct ClientData {
 }
 
 impl Ledger {
-    #[inline]
     /// Consume a `BufReader` that contains a csv file of transactions.
     pub fn consume_csv<T>(&mut self, mut reader: BufReader<T>) -> Result<(), LedgerErr>
     where
@@ -83,13 +87,16 @@ impl Ledger {
     ///
     /// Example:
     /// ```rust
-    /// const ledger = Ledger::default();
+    /// use csv_ledger_lib::ledger::Ledger;
+    ///
+    /// // Create a new ledger
+    /// let mut ledger = Ledger::default();
     ///
     /// // Deposit
-    /// ledger.insert_transaction(1,1,10.0);
+    /// ledger.insert_transaction(1,1,10.0 as i64);
     ///
     /// // Withdrawal
-    /// ledger.insert_transaction(1,2,-10.0);
+    /// ledger.insert_transaction(1,2,-10.0 as i64);
     /// ```
     pub fn insert_transaction(&mut self, client_id: u16, transaction_id: u32, amount: i64) {
         if let Some(client) = self.clients.get_mut(&client_id) {

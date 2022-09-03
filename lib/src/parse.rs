@@ -3,14 +3,14 @@
 //!
 //! **Basic example:**
 //! ```rust
-//! use crate::parse::{parse_header, parse_transaction}
+//! use csv_ledger_lib::parse::{parse_header, parse_transaction};
 //!
 //! fn main() {
 //!     // Example csv data
-//!     let csv = "type, client, tx, amount,
+//!     let csv = "type, client, tx, amount
 //!         deposit, 1, 1, 17.99
 //!         withdrawal, 2, 2, 12.00
-//!         hold 1, 1, ";
+//!         dispute, 1, 1, ";
 //!
 //!     let mut lines = csv.split("\n");
 //!     let mut transactions = Vec::new();
@@ -113,22 +113,26 @@ pub fn four_dp(input: &str) -> IResult<&str, i64> {
 /// Please note that whitespace will be ignored.
 ///
 /// Example:
-/// ```ts
-/// // Valid Inputs:
-/// assert_eq!(parse_transaction("deposit, 1, 1, 20.0"), ("", Transaction::Deposit(1, 1, 200)))
-/// assert_eq!(parse_transaction(" deposit,  2, 20  ,6.99  "), ("", Transaction::Deposit(2, 20, 699)));
-/// assert_eq!(parse_transaction("withdrawal, 3, 7, 22.7"), ("", Transaction::Withdrawal(3, 7, 2270)));
+/// ```rust
+/// use csv_ledger_lib::parse::{Transaction, parse_transaction};
 ///
-/// assert_eq!(parse_transaction("dispute, 2, 2,"), ("", Transaction::Dispute(2, 2)));
-/// assert_eq!(parse_transaction("resolve, 2, 2,"), ("", Transaction::Resolve(2, 2)));
+/// fn main() {
+///     // Valid Inputs:
+///     assert_eq!(parse_transaction("deposit, 1, 1, 20.0"), Ok(Transaction::Deposit(1, 1, 200000)));
+///     assert_eq!(parse_transaction(" deposit,  2, 20  ,6.99  "), Ok(Transaction::Deposit(2, 20, 69900)));
+///     assert_eq!(parse_transaction("withdrawal, 3, 7, 22"), Ok(Transaction::Withdrawal(3, 7, 220000)));
 ///
-/// assert_eq!(parse_transaction("dispute, 3, 7,"), ("", Transaction::Dispute(3, 7)));
-/// assert_eq!(parse_transaction("chargeback, 3, 7,"), ("", Transaction::Chargeback(3, 7)));
+///     assert_eq!(parse_transaction("dispute, 2, 2,"), Ok(Transaction::Dispute(2, 2)));
+///     assert_eq!(parse_transaction("resolve, 2, 2,"), Ok(Transaction::Resolve(2, 2)));
 ///
-/// // Invalid Inputs:
-/// assert!(parse_transaction("deposit, 1, 1,").is_err());
-/// assert!(parse_transaction("xyz, 1, 1, 2.0").is_err());
-/// assert!(parse_transaction("dispute, 1,").is_err());
+///     assert_eq!(parse_transaction("dispute, 3, 7,"), Ok(Transaction::Dispute(3, 7)));
+///     assert_eq!(parse_transaction("chargeback, 3, 7,"), Ok(Transaction::Chargeback(3, 7)));
+///
+///     // Invalid Inputs:
+///     assert!(parse_transaction("deposit, 1, 1,").is_err());
+///     assert!(parse_transaction("xyz, 1, 1, 2.0").is_err());
+///     assert!(parse_transaction("dispute, 1,").is_err());
+/// }
 /// ```
 #[inline]
 pub fn parse_transaction(input: &str) -> Result<Transaction, NomErr<SubErr<&str>>> {
@@ -177,11 +181,15 @@ pub fn parse_transaction(input: &str) -> Result<Transaction, NomErr<SubErr<&str>
 /// Please note that whitespace will be ignored.
 ///
 /// Example:
-/// ```rs
-/// assert!(parse_header("type, client, tx, amount").is_ok());
-/// assert!(parse_header(" type,  client, tx  ,amount  ").is_ok());
+/// ```rust
+/// use csv_ledger_lib::parse::parse_header;
 ///
-/// assert!(parse_header("type, client, tx").is_err());
+/// fn main() {
+///     assert!(parse_header("type, client, tx, amount").is_ok());
+///     assert!(parse_header(" type,  client, tx  ,amount  ").is_ok());
+///
+///     assert!(parse_header("type, client, tx").is_err());
+/// }
 /// ```
 #[inline]
 pub fn parse_header(input: &str) -> Result<(), NomErr<SubErr<&str>>> {
